@@ -1,6 +1,6 @@
 # Weather Frontend
 
-![Python](https://img.shields.io/badge/Python-3.11-blue) ![Flask](https://img.shields.io/badge/Flask-Web_UI-black) ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED) 
+![Python](https://img.shields.io/badge/Python-3.11-blue) ![Flask](https://img.shields.io/badge/Flask-Web_UI-black) ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
 
 This frontend service provides a simple weather dashboard for four locations: New York, Sydney, Cape Town, and Bangkok.
 
@@ -67,3 +67,7 @@ Run the container:
 - `.gitignore` - ignored local files
 - `Dockerfile` - container build instructions
 - `README.md` - project documentation
+
+## Screenshot
+
+![Weather Dashboard](screenshots/frontend-web.png)
