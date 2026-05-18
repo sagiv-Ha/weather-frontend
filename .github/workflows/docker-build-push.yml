@@ -11,15 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout frontend repository
         uses: actions/checkout@v4
 
-      - name: Set Docker image tag
+      - name: Set environment variables
         run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
           if [ "${GITHUB_REF_NAME}" = "master" ]; then
-            echo "IMAGE_TAG=prod" >> $GITHUB_ENV
+            echo "ENV_NAME=prod" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-prod.yaml" >> $GITHUB_ENV
+            echo "IMAGE_TAG=prod-${SHORT_SHA}" >> $GITHUB_ENV
           else
-            echo "IMAGE_TAG=dev" >> $GITHUB_ENV
+            echo "ENV_NAME=dev" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-dev.yaml" >> $GITHUB_ENV
+            echo "IMAGE_TAG=dev-${SHORT_SHA}" >> $GITHUB_ENV
           fi
 
       - name: Login to Docker Hub
@@ -35,3 +41,36 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/weather-frontend:${IMAGE_TAG}
+
+      - name: Checkout Helm GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: sagiv-Ha/weather-helm-charts
+          token: ${{ secrets.HELM_REPO_TOKEN }}
+          path: weather-helm-charts
+          ref: main
+
+      - name: Update frontend Helm values
+        run: |
+          cd weather-helm-charts
+
+          sed -i "s|tag: .*|tag: ${IMAGE_TAG}|" charts/weather-frontend/${VALUES_FILE}
+
+          echo "Updated charts/weather-frontend/${VALUES_FILE}:"
+          cat charts/weather-frontend/${VALUES_FILE}
+
+      - name: Commit and push Helm values update
+        run: |
+          cd weather-helm-charts
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add charts/weather-frontend/${VALUES_FILE}
+
+          if git diff --cached --quiet; then
+            echo "No Helm values changes to commit"
+          else
+            git commit -m "Update frontend ${ENV_NAME} image tag to ${IMAGE_TAG}"
+            git push origin main
+          fi
